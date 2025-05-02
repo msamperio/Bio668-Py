@@ -133,7 +133,7 @@ class DNA(Seq):
         return gc
 
     def print_info(self):
-        return " "+ self.geneid +" "+ self.species + " " + self.gene + ": " + self.sequence  
+        return self.geneid +" "+ self.species + " " + self.gene + ": " + self.sequence  
 
     def reverse_complement(self):
         rseq = self.sequence[::-1]
