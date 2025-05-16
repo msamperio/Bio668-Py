@@ -66,6 +66,7 @@
 
 
 import re
+import doctest
 
 standard_code = {
      "UUU": "F", "UUC": "F", "UUA": "L", "UUG": "L", "UCU": "S",
@@ -94,6 +95,18 @@ aa_mol_weights={'A':89.09,'C':121.15,'D':133.1,'E':147.13,'F':165.19,
 class Seq:
 
     def __init__(self, sequence='', gene= '', species='', kmers=[]):
+        """
+        Initializes the sequence, gene, species, and kmers list. Ensures sequence 
+        is upper case and stripped.
+        
+        >>> s = Seq("ATGCCGTA", "Gene1", "Homo sapiens")
+        >>> s.sequence
+        'ATGCCGTA'
+        >>> s.gene
+        'Gene1'
+        >>> s.species
+        'Homo sapiens'
+        """
         
         self.sequence=sequence.strip().upper()
         self.gene=gene
@@ -101,12 +114,33 @@ class Seq:
         self.kmers=[] #needs to be empty list
         
     def __str__(self):
+        """
+       Returns the gene and species information in a string.
+       
+       >>> s = Seq("ATGC", "geneA", "Homo sapiens")
+       >>> s.print_record()
+       'Homo sapiens geneA: ATGC'
+       """
         return self.sequence
 
     def print_record(self):
+        """
+        Returns the gene and species information in a string.
+        
+        >>> s = Seq("ATGC", "geneA", "Homo sapiens")
+        >>> s.print_record()
+        'Homo sapiens geneA: ATGC'
+        """
         return self.species + " " + self.gene + ": " + self.sequence
 
     def make_kmers(self, k=3):
+        """
+       Generates k-mers from the sequence. Default parameter is 3.
+       
+       >>> s = Seq("ATGC", "geneA", "Homo sapiens")
+       >>> s.make_kmers(2)
+       ['AT', 'TG', 'GC']
+       """
         for i in range(0,len(self.sequence)):
             kmer=self.sequence[i:i+k] #in case kmer parameter is changed.
             #print(kmer)
@@ -116,26 +150,71 @@ class Seq:
         return self.kmers
   
     def fasta(self):
+        """
+        Return the sequence in FASTA format.
+        
+        >>> s = Seq("ATGCCGTA", "Gene1", "Homo sapiens")
+        >>> print(s.fasta())
+        >Homo sapiens Gene1
+        ATGCCGTA
+        """
         return ">"+ self.species+" "+ self.gene  + "\n"+self.sequence
     
 class DNA(Seq):
     
     def __init__(self, sequence='', gene= '', species='', geneid='',kmers=[]):
+        """
+        Initialize the DNA sequence, including geneid, and introduces N to sequence.
+        
+        >>> d = DNA("GAxTCTC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> d.sequence
+        'GANTCTC'
+        >>> d.geneid
+        'GeneID123'
+        """
         super().__init__(sequence,gene,species,kmers)
         self.sequence=re.sub('[^ATGCU]','N',self.sequence)
         self.geneid=geneid
         
     def __str__(self):
+        """
+        Return the string representation of the DNA sequence.
+        
+        >>> d = DNA("GATCTC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> str(d)
+        'GATCTC'
+        """
         return super().__str__()
     
     def analysis(self):
+        """
+        Calculate GC content of the DNA sequence.
+        
+        >>> d = DNA("GATCTC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> d.analysis()
+        3
+        """
         gc=len(re.findall('G',self.sequence) + re.findall('C',self.sequence))
         return gc
 
     def print_info(self):
+        """
+        Print DNA record including geneid, species, and sequence.
+        
+        >>> d = DNA("GATCTC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> d.print_info()
+        'GeneID123 Homo sapiens Gene1: GATCTC'
+        """
         return self.geneid +" "+ self.species + " " + self.gene + ": " + self.sequence  
 
     def reverse_complement(self):
+        """
+        Get the reverse complement of the DNA sequence.
+        
+        >>> d = DNA("GATCTC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> d.reverse_complement()
+        'GAGATC'
+        """
         rseq = self.sequence[::-1]
         d = {"A": "T", "T": "A", "C": "G", "G": "C","N":"N"}
         compseq = ""
@@ -144,6 +223,13 @@ class DNA(Seq):
         return compseq
         
     def six_frames(self):
+        """
+        Generate the six reading frames (3 forward, 3 reverse).
+        
+        >>> d = DNA("GATCTC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> d.six_frames()
+        ['GATCTC', 'ATCTC', 'TCTC', 'GAGATC', 'AGATC', 'GATC']
+        """
         frames=[]
         for i in range(3): #will stop at third character in string
             frames.append(self.sequence[i:])#need to slice or else won't work
@@ -157,11 +243,26 @@ class DNA(Seq):
 class RNA(DNA):
 
     def __init__(self, sequence='', gene= '', species='', geneid='',kmers=[],codons=[]):
+        """
+        Initialize the RNA sequence by converting DNA sequence to RNA.
+        
+        >>> r = RNA("GATCTC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> r.sequence
+        'GAUCUC'
+        """
         super().__init__(sequence,gene,species,geneid,kmers)
         self.codons=[]
         self.sequence=re.sub('T','U',self.sequence)
         
-    def make_codons(self):
+    def make_codons(self): 
+       """
+       Create codons from the RNA sequence and store them in self.codons.
+       >>> r = RNA("GAUCUCGAA", "Gene1", "Homo sapiens", "GeneID123")
+       >>> r.make_codons()
+       ['GAU', 'CUC', 'GAA']
+       >>> r.codons
+       ['GAU', 'CUC', 'GAA']
+       """
        self.codons = []
        for i in range(0, len(self.sequence), 3):
            codon = self.sequence[i:i+3]  
@@ -170,6 +271,15 @@ class RNA(DNA):
        return self.codons
    
     def translate(self):
+        """
+        Translate the RNA codons into a protein sequence.
+    
+        >>> r = RNA("GAUCUC", "Gene1", "Homo sapiens", "GeneID123")
+        >>> r.make_codons()
+        ['GAU', 'CUC']
+        >>> r.translate()
+        'DL'
+        """
         proteinlist=[] #output should be string
         for codon in self.codons:
             if codon in standard_code:  
@@ -182,10 +292,25 @@ class RNA(DNA):
 class Protein(Seq):
 
     def __init__(self, sequence='', gene= '', species='', kmers=[]):
+        """
+        Initialize the protein sequence and change non letter characters to X.
+    
+        >>> p = Protein("AC1DE", "Gene1", "Homo sapiens")
+        >>> p.sequence
+        'ACXDE'
+        """
         super().__init__(sequence,gene,species,kmers)
         self.sequence = re.sub('[^A-Z]', 'X', self.sequence)#caret ^ match anything that is NOT a letter
         
     def total_hydro(self):
+        """
+        Calculate total hydrophobicity based on Kyte-Doolittle scale.
+    
+        >>> testp=Protein('VIKING','test','unknown',999)
+        >>> x=testp.total_hydro()
+        >>> print(x)
+        5.4
+        """
         hvalues = []  
         
         for aa in self.sequence:  
@@ -196,6 +321,14 @@ class Protein(Seq):
         return totalh 
 
     def mol_weight(self):
+        """
+        Calculate the molecular weight of the protein.
+
+        >>> testp=Protein('VIKING','test','unknown',999)
+        >>> m=testp.mol_weight()
+        >>> print(m)
+        732.87
+        """
         wvalues = []  
         
         for aa in self.sequence:  
@@ -209,6 +342,11 @@ class Protein(Seq):
     
 
 x=DNA("G","tmp","m",000)
+
+
+
+if __name__ == "__main__":
+    doctest.testmod(verbose=True)
 
 
 
